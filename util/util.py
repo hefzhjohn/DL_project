@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
-from typing import Tuple
+from typing import Tuple, List
 
 
-def data_clean_records(data: pd.DataFrame) -> pd.DataFrame:
+def data_process_records(data: pd.DataFrame) -> pd.DataFrame:
     """Preprocessing data
 
     :param data: data to be cleaned
@@ -12,19 +12,65 @@ def data_clean_records(data: pd.DataFrame) -> pd.DataFrame:
     :rtype: pd.DataFrame
     """
 
-    data = data.dropna()
+    # Make sure data is sorted
+    data = data.sort_values(["optionid", "date"])
+
+    # Create some features
+    data["moneyness"] = data["spot"] - data["strike_price"]
+    data["mid_price"] = (data["best_bid"] + data["best_offer"]) / 2
+    data["spread"] = (data["best_offer"] - data["best_bid"]) / data["mid_price"]
+
+    # Create features
+    features = [
+        "moneyness",
+        "VIX",
+        "spread",
+        "impl_volatility",
+        "impvol_chg",
+        "delta",
+        "gamma",
+        "vega",
+        "theta",
+    ]
+
+    # EMA of features
+    for feature in features:
+        for span in [5, 20]:
+            data[f"{feature}_{str(span)}"] = (
+                data.groupby("optionid")[feature]
+                .ewm(span=span, adjust=False)
+                .mean()
+                .reset_index(drop=True)
+            )
+
+    # Save the prediction target, today's implied vol in a separate column
+    data["iv"] = data["impl_volatility"]
+
+    # Shift features
+    feature_cols = []
+    for feature in features:
+        for span in ["", "_5", "_20"]:
+            feature_cols.append(feature + span)
+            data[feature + span] = data.groupby("optionid")[feature + span].shift(
+                periods=1
+            )
 
     # From the paper. This makes sense as the deep in/out-of-money option delta
     # are much less relevant to our model (movements in price do not meaningfully change
     # the delta)
     data = data[(data["delta"] >= 0.05) & (data["delta"] <= 0.95)]
 
+    # Process needed columns
+    data = data[["date", "optionid", "iv", "time_to_maturity"] + feature_cols]
+    data = data.dropna()
+    data = data.reset_index(drop=True)
+
     return data
 
 
 def split_train_test(
     data: pd.DataFrame, train_pct: float, seed: int = 1
-) -> Tuple(pd.DataFrame):
+) -> Tuple[pd.DataFrame]:
     """Split data by optionid into training and testing sets
 
     :param data: full data set
@@ -50,3 +96,7 @@ def split_train_test(
     test = data[test_mask].reset_index(drop=True)
 
     return train, test
+
+
+def prep_lstm_seq(data: pd.DataFrame) -> List[np.array]:
+    data = data[[""]]
