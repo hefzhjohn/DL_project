@@ -1,6 +1,22 @@
 import pandas as pd
 import numpy as np
-from typing import Tuple, List
+import torch
+from typing import Tuple
+
+
+class DataSet(torch.utils.data.Dataset):
+    # load the dataset
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+
+    # number of rows in the dataset
+    def __len__(self):
+        return len(self.X)
+
+    # get a row at an index
+    def __getitem__(self, idx):
+        return [self.X[idx], self.y[idx]]
 
 
 def data_process_records(data: pd.DataFrame) -> pd.DataFrame:
@@ -98,9 +114,10 @@ def split_train_test(
     return train, test
 
 
-def prep_lstm_seq(data: pd.DataFrame) -> Tuple[np.array]:
+def prep_mlp(data: pd.DataFrame) -> DataSet:
 
-    Y = data.iv.values
     X = data.drop(columns=["date", "optionid", "iv"]).values
+    y = data.iv.values
+    dataset = DataSet(X, y)
 
-    return X, Y
+    return dataset
