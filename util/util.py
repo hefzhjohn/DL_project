@@ -98,5 +98,9 @@ def split_train_test(
     return train, test
 
 
-def prep_lstm_seq(data: pd.DataFrame) -> List[np.array]:
-    data = data[[""]]
+def prep_lstm_seq(data: pd.DataFrame) -> Tuple[np.array]:
+
+    Y = data.iv.values
+    X = data.drop(columns=["date", "optionid", "iv"]).values
+
+    return X, Y
