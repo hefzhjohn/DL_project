@@ -3,3 +3,4 @@
 *.pyc
 data/processed_all.csv
 data/raw_data.csv
+data/features.csv
