@@ -38,3 +38,33 @@ def train_model(
 
             if debug and i % 1000 == 0:
                 print(f"Epoch {ep}, batch {i}, loss: {loss.data.item()}")
+
+
+def test_model(data, model, debug: bool = False):
+
+    # Split data into batches
+    data = DataLoader(data, batch_size=batch_size, shuffle=True)
+
+    # define the optimization
+    criterion = nn.MSELoss()
+
+    # enumerate mini batches
+    for i, (inputs, targets) in enumerate(data):
+
+        # clear the gradients
+        optimizer.zero_grad()
+
+        # compute the model output
+        yhat = model(inputs.float())
+
+        # calculate loss
+        loss = criterion(yhat, targets.float())
+
+        # credit assignment
+        loss.backward()
+
+        # update model weights
+        optimizer.step()
+
+        if debug and i % 1000 == 0:
+            print(f"Epoch {ep}, batch {i}, loss: {loss.data.item()}")
