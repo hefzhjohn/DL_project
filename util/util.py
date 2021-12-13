@@ -20,7 +20,7 @@ class DataSet(torch.utils.data.Dataset):
 
 
 def data_process_records(data: pd.DataFrame) -> pd.DataFrame:
-    """Preprocessing data
+    """Preprocessing raw data to experiment data
 
     :param data: data to be cleaned
     :type data: pd.DataFrame
